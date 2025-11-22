@@ -1,0 +1,99 @@
+.notif-root { position: relative; display: inline-block; }
+.notif-bell-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  font-size: 20px;
+  color: inherit;
+  padding: 6px;
+}
+.notif-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #ff3b30;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* Panel: posicionado absoluto respecto al boton */
+.notif-panel-portal {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  z-index: 400;
+}
+
+/* Panel interno */
+.notif-panel {
+  width: 360px;
+  max-width: calc(100vw - 24px);
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.notif-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+}
+.notif-panel-actions { display: flex; gap: 8px; align-items:center; }
+.btn-link {
+  background: transparent;
+  border: none;
+  color: #0077cc;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.btn-close { background: none; border: none; cursor: pointer; font-size: 1rem; }
+
+/* Lista */
+.notif-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+.notif-empty { padding: 18px; color: #666; text-align:center; }
+
+/* Item */
+.notif-item {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f2f2f2;
+  cursor: pointer;
+}
+.notif-item.unread { background: #fffaf0; }
+.notif-item.read { background: #fff; opacity: 0.95; }
+
+.notif-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.notif-title { font-weight: 700; font-size: 0.95rem; color: #222; }
+.notif-badge {
+  background: #ffb400;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+}
+
+.notif-body { margin-top: 8px; color: #444; display:flex; flex-direction:column; gap:8px; }
+.notif-message { font-size: 0.9rem; }
+.notif-meta { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size: 0.8rem; color:#888; }
+.btn-mark { background:#f1f1f1; border: none; padding: 6px 8px; border-radius: 6px; cursor:pointer; font-size:0.8rem; }
+
+/* Scrollbar opcional */
+.notif-list::-webkit-scrollbar { width: 8px; }
+.notif-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 8px; }

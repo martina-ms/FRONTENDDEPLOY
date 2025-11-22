@@ -1,0 +1,139 @@
+
+
+.pedidos-container {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 20px 10%;
+  font-family: inherit;
+  min-height: 70vh; 
+}
+
+.pedidos-container h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #ffb400;
+  padding-bottom: 10px;
+  margin-bottom: 25px;
+}
+
+.error-msg {
+  color: #dc3545; 
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.pedidos-lista {
+  display: grid;
+  gap: 25px;
+  grid-template-columns: 1fr; 
+}
+
+.pedido-card {
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  overflow: hidden; 
+  transition: box-shadow 0.2s ease;
+}
+
+.pedido-card:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.pedido-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: left;
+  background-color: #fcfcfc;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.pedido-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.pedido-estado {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+.pedido-estado.pendiente {
+  background-color: #777;
+}
+.pedido-estado.confirmado {
+  background-color: #28a745; 
+}
+.pedido-estado.enviado {
+  background-color: #007bff; 
+}
+.pedido-estado.cancelado {
+  background-color: #dc3545;
+}
+
+.pedido-body {
+  padding: 20px;
+}
+
+.pedido-body p {
+  margin: 0 0 10px 0;
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.pedido-body h4 {
+  margin: 15px 0 10px 0;
+  color: #333;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+.pedido-body ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.pedido-body li {
+  color: #444;
+  padding: 5px 0;
+  font-size: 0.9rem;
+}
+
+
+@media (max-width: 900px) {
+  .pedidos-container {
+    padding: 20px 5%;
+  }
+}
+
+.pedido-footer {
+  margin-top: 15px;
+  text-align: right; /* Alinea el botón a la derecha */
+}
+
+.cancelar-pedido-btn {
+  background-color: #dc3545; /* Un color rojo para "cancelar" */
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.cancelar-pedido-btn:hover {
+  background-color: #c82333; /* Un rojo más oscuro al pasar el mouse */
+}

@@ -1,0 +1,129 @@
+
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.cart-drawer-content {
+  width: 350px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cart-list {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #af7d7d;
+  padding-bottom: 10px;
+}
+
+.cart-item-img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 12px;
+}
+
+.cart-item-info {
+  flex: 1;
+}
+
+.cart-item-title {
+  font-weight: bold;
+}
+
+.cart-item-price {
+  font-size: 13px;
+  color: #555;
+}
+
+.cart-item-controls {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.cart-item-qty {
+  margin: 0 8px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.cart-empty {
+  color: #000000;
+  text-align: center;
+  margin: 32px 0;
+} 
+
+.cart-total-section {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.cart-yellow-button {
+  margin-top: 16px;
+  color: #ffa600 !important;         /* texto amarillo */
+  border-color: #ffa600 !important;  /* borde amarillo */
+  font-weight: bold;
+}
+
+.cart-yellow-button:hover {
+  color: #ffa600 !important;         /* mantiene el amarillo */
+  border-color: #ffa600 !important;  /* evita que cambie a azul */
+  background-color: rgba(255, 215, 0, 0.1); /* opcional: leve fondo */
+}
+
+/* Botón CONTINUAR */
+.cart-continue-button {
+  margin-top: 16px;
+  background-color: #FFD700 !important; /* amarillo */
+  color: #ffffff !important;               /* texto negro */
+  font-weight: bold;
+  border: none;
+}
+
+.cart-continue-button:hover {
+  background-color: #e6c200 !important; /* amarillo más oscuro */
+}
+
+/* Mantiene el gris cuando está deshabilitado */
+.cart-continue-button.Mui-disabled {
+  background-color: #e0e0e0 !important;
+  color: #9e9e9e !important;
+}
+
+/* Botón COMPRA MÁS */
+.cart-yellow-button {
+  margin-top: 16px;
+  color: #FFD700 !important;
+  border-color: #FFD700 !important;
+  font-weight: bold;
+}
+
+.cart-yellow-button:hover {
+  color: #FFD700 !important;
+  border-color: #FFD700 !important;
+  background-color: rgb(255, 255, 255);
+}
+
+

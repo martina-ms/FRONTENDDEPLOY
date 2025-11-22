@@ -1,0 +1,136 @@
+.carousel-container {
+  width: 100%;
+  padding: 2rem 0;
+  background-color: #ffffff;
+}
+
+.carousel-title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  color: #1a1a1a;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.carousel-wrapper {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 3rem;
+}
+
+.carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  gap: 1rem;
+}
+
+.carousel-track.centered {
+  justify-content: center;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  color: #666;
+}
+
+.carousel-btn:hover:not(.disabled) {
+  background: #1a1a1a;
+  color: white;
+  border-color: #1a1a1a;
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.carousel-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: translateY(-50%);
+}
+
+.carousel-btn.disabled:hover {
+  background: white;
+  color: #666;
+  border-color: #e1e5e9;
+  transform: translateY(-50%);
+}
+
+.left-btn {
+  left: 1rem;
+}
+
+.right-btn {
+  right: 1rem;
+}
+
+.carousel-empty {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #666;
+  padding: 3rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .carousel-wrapper {
+    padding: 0 2.5rem;
+  }
+  
+  .carousel-track {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .carousel-wrapper {
+    padding: 0 2rem;
+  }
+  
+  .carousel-title {
+    font-size: 1.5rem;
+  }
+  
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .left-btn {
+    left: 0.5rem;
+  }
+  
+  .right-btn {
+    right: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-wrapper {
+    padding: 0 1.5rem;
+  }
+  
+  .carousel-btn {
+    width: 36px;
+    height: 36px;
+  }
+}

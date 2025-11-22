@@ -1,0 +1,27 @@
+/* ============ App.css ============ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fafafa;
+  color: #222;
+  font-family: "Inter", "Roboto", sans-serif;
+}
+
+/* Hace que el contenido principal ocupe todo el espacio disponible */
+.app > * {
+  flex-shrink: 0;
+}
+
+/* Scroll suave en toda la app */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reset básico */
+body, h1, h2, h3, h4, p {
+  margin: 0;
+  padding: 0;
+}
+

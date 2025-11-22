@@ -1,0 +1,299 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 10%;
+  border-bottom: 1px solid #eee;
+  background-color: #fff;
+  position: relative;
+  z-index: 10;
+}
+
+/* Logo */
+.nav-logo {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.nav-logo a {
+ text-decoration: none; 
+ color: #333; 
+}
+
+/* Barra de búsqueda */
+.nav-search {
+  flex: 1;
+  margin: 0 40px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Enlaces */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.nav-links a,
+.nav-main-link {
+  font-size: 1rem;
+}
+
+
+.nav-links a:hover {
+  color: #ffb400;
+}
+
+/* Botón de ingresar */
+.nav-button {
+  background-color: #eee;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+/* Íconos */
+.nav-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-icon {
+  font-size: 1.3rem;
+  color: #333;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.nav-icon:hover {
+  color: #ffb400;
+}
+
+/* Botón menú hamburguesa */
+.nav-toggle {
+  display: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.auth-button {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+/* Botón de iniciar sesión / registrarse */
+.auth-button.login {
+  background-color: #ffb400;
+  color: #fff;
+}
+
+.auth-button.login:hover {
+  background-color: #e0a800;
+}
+
+/* Botón de cerrar sesión */
+.auth-button.logout {
+  background-color: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+.auth-button.logout:hover {
+  background-color: #f8f8f8;
+}
+
+/* Para mantener espaciado consistente */
+.user-info-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ==========================
+   🔹 Responsive design
+   ========================== */
+
+@media (max-width: 900px) {
+  .nav-search {
+    display: none; /* Oculta la barra de búsqueda en pantallas pequeñas */
+  }
+
+  .nav-toggle {
+    display: block; /* Muestra el ícono del menú */
+  }
+
+  .nav-links {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    width: 220px;
+    background-color: #fff;
+    border-left: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    display: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+
+  .nav-links a,
+  .nav-icons {
+    width: 100%;
+  }
+
+  .nav-button {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ==========================
+   🔹 Submenú Productos
+   ========================== */
+
+.nav-item-with-submenu {
+  position: relative;
+}
+
+.nav-main-link {
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: #333;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  line-height: 1; 
+  display: inline-block;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.nav-main-link:hover {
+  color: #ffb400;
+}
+
+.submenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  display: none;
+  flex-direction: column;
+  min-width: 180px;
+  z-index: 50;
+  padding: 8px 0;
+}
+
+/* Ahora el hover mantiene visible el menú */
+.nav-item-with-submenu:hover .submenu,
+.submenu.show {
+  display: flex;
+}
+
+.submenu a {
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.submenu a:hover {
+  background-color: none;
+  color: #ffb400;
+}
+
+/* Mobile (menú hamburguesa abierto) */
+@media (max-width: 900px) {
+  .nav-item-with-submenu {
+    width: 100%;
+  }
+
+  .submenu {
+    position: static;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    display: none;
+  }
+
+  .submenu.show {
+    display: flex;
+  }
+
+  .submenu a {
+    padding: 10px 0;
+  }
+}
+
+/* Contenedor del input + botón */
+.nav-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* espacio entre input y botón */
+  flex: 1; /* ocupa todo el espacio disponible */
+  max-width: 600px; /* podés aumentar o reducir según diseño */
+  margin: 0 40px;
+}
+
+/* Input */
+.nav-search {
+  flex: 1; /* ocupa todo el espacio disponible dentro del wrapper */
+  padding: 10px 16px; /* un poco más grande */
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+/* Botón */
+.nav-search-btn {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #ffb400;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.nav-search-btn:hover {
+  background-color: #e0a800;
+}
+
+/* Responsive: ocultar en móviles */
+@media (max-width: 900px) {
+  .nav-search-wrapper {
+    display: none;
+  }
+}
