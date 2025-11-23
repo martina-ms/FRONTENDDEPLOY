@@ -1,7 +1,7 @@
 import axios from "axios";
 import keycloak from "../keycloak"; 
 
-const API_BASE_URL = 'http://localhost:3000'; 
+const API_BASE_URL = 'https://backenddeployy.onrender.com'; 
 
 
 const api = axios.create({
