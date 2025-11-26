@@ -1,7 +1,7 @@
 import axios from "axios";
 import keycloak from "../keycloak"; 
 
-const API_BASE_URL = 'https://tienda-sol-back-d6b8.onrender.com/'; 
+const API_BASE_URL = 'https://tiendasolback.onrender.com/'; 
 
 
 const api = axios.create({
