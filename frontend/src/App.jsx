@@ -14,26 +14,26 @@ import Checkout from "./pages/Checkout";
 import Gracias from "./pages/Gracias";
 
 function App() {
-    return (
-        <Router> 
-            <Navbar />
-                <div className="app"> 
-                  <Routes> 
-                      <Route path="/" element={<Home />} />
-                      <Route path="/productos" element={<Productos />} />
-                      <Route path="/carga-producto" element={<CargaProducto />} />
-                      <Route path="/pedidos" element={<MisPedidos />} /> 
-                      <Route path= "productos/:id" element={<ProductoUnitario />}/>
-                      <Route path="/carrito" element={<Carrito />} />
-                      <Route path="/checkout" element={<Checkout />} />
-                      <Route path="/gracias" element={<Gracias />} />
-                  </Routes>
-                  <CartDrawer />
-                </div>
-              <Footer />
-        </Router>
-    );
-}; 
+  return (
+    <>
+      <Navbar />
+      <div className="app">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/productos" element={<Productos />} />
+          <Route path="/carga-producto" element={<CargaProducto />} />
+          <Route path="/pedidos" element={<MisPedidos />} />
+          <Route path="/productos/:id" element={<ProductoUnitario />} />
+          <Route path="/carrito" element={<Carrito />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/gracias" element={<Gracias />} />
+        </Routes>
+        <CartDrawer />
+      </div>
+      <Footer />
+    </>
+  );
+}
 
 export default App;
 

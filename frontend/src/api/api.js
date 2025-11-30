@@ -1,72 +1,84 @@
 import axios from "axios";
-import keycloak from "../keycloak"; 
+import { getToken } from "../auth/authService.js";
 
-const API_BASE_URL = 'https://tiendasolback.onrender.com/'; 
-
+const API_BASE_URL = 'https://tiendasolback.onrender.com/';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-
+// interceptor async que obtiene token y lo agrega si existe
 api.interceptors.request.use(
-  (config) => {
-    
-    if (keycloak.authenticated && keycloak.token) {
-      config.headers.Authorization = `Bearer ${keycloak.token}`;
+  async (config) => {
+    try {
+      const token = await getToken();
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (err) {
+      // No hacemos throw: si falla obtener token, seguimos sin Authorization
+      console.warn("api: no se pudo obtener token para la request", err);
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-
-
-// Obtener lista de productos
+// Helpers para llamadas públicas/protegidas
 export const getProductos = async () => {
   try {
-    
-    const response = await api.get(`/productos`, {
-      headers: { 'Cache-Control': 'no-cache' }
-    });
+    // No forzamos headers aquí: evitamos preflight innecesario
+    const response = await api.get(`/productos`);
     return response.data;
   } catch (error) {
-    console.error("Error obteniendo productos", error);
+    console.error("Error obteniendo productos", extractAxiosError(error));
     throw error;
   }
 };
 
-// Obtener producto por ID
 export const getProductoById = async (id) => {
   try {
-    const response = await api.get(`/productos/${id}`);
+    const response = await api.get(`/productos/${encodeURIComponent(id)}`);
     return response.data;
   } catch (error) {
-    console.error(`Error al obtener producto con id ${id}`, error);
+    console.error(`Error al obtener producto con id ${id}`, extractAxiosError(error));
     throw error;
   }
 };
 
 export const getTopProductos = async () => {
   try {
-    const response = await api.get(`/productos/top`, {
-      headers: { 'Cache-Control': 'no-cache' }
-    });
+    // GET simple, sin headers extra para evitar preflight
+    const response = await api.get(`/productos/top`);
     return response.data;
   } catch (error) {
-    console.error("Error obteniendo top 10 productos más vendidos", error);
+    console.error("Error obteniendo top 10 productos más vendidos", extractAxiosError(error));
     throw error;
   }
 };
 
 export const crearProducto = async (datosProducto) => {
-    try {
-        const response = await api.post('/productos', datosProducto);
-        return response.data;
-    } catch (error) {
-        console.error("Error al crear el producto", error);
-        throw error;
-    }
+  try {
+    // Para FormData axios coloca el Content-Type correctamente (no lo seteamos manualmente)
+    const response = await api.post('/productos', datosProducto);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear el producto", extractAxiosError(error));
+    throw error;
+  }
 };
+
+function extractAxiosError(error) {
+  // Devuelve info útil para debugging
+  if (!error) return null;
+  return {
+    message: error.message,
+    code: error.code,
+    status: error.response?.status,
+    data: error.response?.data,
+    request: !!error.request,
+  };
+}
+
+export default api;
