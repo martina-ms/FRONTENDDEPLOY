@@ -12,7 +12,6 @@ import Carrito from "./features/Pedidos/Carrito";
 import CartDrawer from "./components/Carrito/cartDrawer";
 import Checkout from "./pages/Checkout";
 import Gracias from "./pages/Gracias";
-import RouteDebugger from "./RouteDebbugger";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -32,7 +31,6 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/gracias" element={<Gracias />} />
         </Routes>
-        <RouteDebugger />
         <CartDrawer />
       </div>
       <Footer />
