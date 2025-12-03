@@ -12,6 +12,8 @@ import Carrito from "./features/Pedidos/Carrito";
 import CartDrawer from "./components/Carrito/cartDrawer";
 import Checkout from "./pages/Checkout";
 import Gracias from "./pages/Gracias";
+import RouteDebugger from "./RouteDebbugger";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -21,13 +23,16 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/productos" element={<Productos />} />
-          <Route path="/carga-producto" element={<CargaProducto />} />
+          <Route path="/carga-producto" element={ <ProtectedRoute>
+              <CargaProducto />
+            </ProtectedRoute>} />
           <Route path="/pedidos" element={<MisPedidos />} />
           <Route path="/productos/:id" element={<ProductoUnitario />} />
           <Route path="/carrito" element={<Carrito />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/gracias" element={<Gracias />} />
         </Routes>
+        <RouteDebugger />
         <CartDrawer />
       </div>
       <Footer />

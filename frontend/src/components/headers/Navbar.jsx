@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import "./Navbar.css";
 import Header from "./Header";
 import { FaShoppingCart, FaBars, FaTimes } from "react-icons/fa";
@@ -24,9 +24,14 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { loginWithRedirect, logout, isAuthenticated, user, isLoading } = useAuth();
+  const { loginWithRedirect, logout, isAuthenticated, user, isLoading, getAccessTokenSilently } = useAuth();
 
   const [roles, setRoles] = useState([]);
+  const hasRole = (r) => roles.map(s => String(s).toLowerCase()).includes(String(r).toLowerCase());
+  const canViewPedidos =
+    isAuthenticated &&
+    (hasRole("comprador") || hasRole("vendedor") || hasRole("administrador"));
+
 
   useEffect(() => {
     let mounted = true;
@@ -36,7 +41,8 @@ const Navbar = () => {
         return;
       }
       try {
-        const token = await getToken();
+        // FORZAR token fresco (ignorar cache) para obtener claims actualizados
+        const token = await getToken({ ignoreCache: true }); // si tu getToken acepta options
         if (!token) {
           setRoles([]);
           return;
@@ -64,14 +70,14 @@ const Navbar = () => {
     if (e.key === "Enter") handleSearch();
   };
 
-  const hasRole = (r) => roles.includes(r);
+  
 
   return (
     <>
       {location.pathname === "/" && <Header />}
 
       <nav className="navbar">
-        <div className="nav-logo"><a href="/">Tienda Sol</a></div>
+        <div className="nav-logo"><Link to="/">Tienda Sol</Link></div>
 
         <div className="nav-search-wrapper">
           <input
@@ -90,7 +96,7 @@ const Navbar = () => {
         </div>
 
         <div className={`nav-links ${menuOpen ? "active" : ""}`}>
-          <a href="/">Inicio</a>
+          <Link to="/">Inicio</Link>
 
           <div
             className="nav-item-with-submenu"
@@ -99,13 +105,15 @@ const Navbar = () => {
           >
             <button className="nav-main-link">Productos ▾</button>
             <div className={`submenu ${submenuOpen ? "show" : ""}`}>
-              <a href="/productos">Ver productos</a>
-              <a href="/carga-producto">Subir producto</a>
+              <Link to="/productos">Ver productos</Link>
+              {/* Mostrar "Subir producto" solo si es vendedor o admin en UI */}
+              {hasRole('vendedor') && <Link to="/carga-producto">Subir producto</Link>}
+              {/* Si querés visible siempre, quita la comprobación */}
             </div>
           </div>
 
-          {isAuthenticated && hasRole('comprador') && (
-            <a href="/pedidos">Mis Pedidos</a>
+          {isAuthenticated && canViewPedidos && (
+            <Link to="/pedidos">Mis Pedidos</Link>
           )}
 
           <div className="nav-icons">

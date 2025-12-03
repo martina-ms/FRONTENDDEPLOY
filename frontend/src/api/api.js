@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "../auth/authService.js";
 
-const API_BASE_URL = 'https://tiendasolback.onrender.com/';
+const API_BASE_URL = 'http://localhost:3000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

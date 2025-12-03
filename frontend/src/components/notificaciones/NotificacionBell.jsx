@@ -61,7 +61,7 @@ export default function NotificacionBell() {
   }, [isAuthenticated, user]);
 
   // Cargar notificaciones (polling opcional)
-  useEffect(() => {
+   useEffect(() => {
     if (!isAuthenticated || !usuarioId) {
       setNotifications([]);
       return;

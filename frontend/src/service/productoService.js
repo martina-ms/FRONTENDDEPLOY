@@ -1,4 +1,7 @@
 import api from "../api/api";
+import axios from "axios";
+import { getToken } from "../auth/authService";
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:3000";
 
 /**
  * Servicio de productos actualizado para usar la instancia axios central (src/api.js)
@@ -7,14 +10,17 @@ import api from "../api/api";
  * Reemplaza las llamadas directas a axios por `api` y usa rutas relativas
  * (api tiene baseURL configurado).
  */
-
-export const crearProducto = async (producto) => {
+export const crearProducto = async (formData, token = null) => {
   try {
-    const response = await api.post(`/productos`, producto);
-    return response.data;
-  } catch (error) {
-    console.error(`Error al crear el producto`, error);
-    throw error;
+    const headers = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    console.log(token);
+
+    const resp = await axios.post(`${API_BASE}/productos`, formData, { headers });
+    return resp.data;
+  } catch (err) {
+    console.error("Error al crear el producto", err?.response?.data || err.message || err);
+    throw err;
   }
 };
 

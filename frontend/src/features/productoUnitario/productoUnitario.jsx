@@ -267,13 +267,13 @@ const ProductoUnitario =() => {
             <p>{producto.descripcion || "Sin descripción disponible."}</p>
           </div>
 
-          {producto.vendedor && (
+          {/* {producto.vendedor && (
             <div className="vendedor">
               <h4>Vendedor</h4>
               <p className="vendedor-nombre">{producto.vendedor.nombre || producto.vendedor}</p>
               {producto.vendedor.contacto && <p className="vendedor-contacto">Contacto: {producto.vendedor.contacto}</p>}
             </div>
-          )}
+          )} */}
         </div>
       </div>
 

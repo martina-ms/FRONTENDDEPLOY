@@ -188,7 +188,7 @@ const MisPedidos = () => {
 
                   <div className="pedido-footer">
                     {/* Solo mostrar el botón si el pedido NO está ya cancelado o entregado */}
-                    {pedido.estado !== 'CANCELADO' && pedido.estado !== 'ENTREGADO' && (
+                    {pedido.estado !== 'Cancelado' && pedido.estado !== 'Entregado' && (
                       <button
                         className="cancelar-pedido-btn"
                         onClick={() => handleCancelarPedido(pedido._id)}

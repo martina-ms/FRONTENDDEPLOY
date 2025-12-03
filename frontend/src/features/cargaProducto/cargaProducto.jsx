@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import "./cargaProducto.css";
 import { crearProducto } from "../../service/productoService";
 import { useNavigate } from "react-router-dom";
-import useAuth from "../../hooks/useAuth";
-import { getToken } from "../../auth/authService";
+import { useAuth0 } from "@auth0/auth0-react";
+import { getToken } from "../../auth/authService"; // si getToken usa getAccessTokenSilently, ok
 
 const CargaProducto = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, initialized, loginWithRedirect, user } = useAuth();
+  // Usamos useAuth0 directamente para evitar inconsistencias con useAuth personalizado
+  const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -22,13 +23,19 @@ const CargaProducto = () => {
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // DEBUG: ver estado de auth en consola
   useEffect(() => {
-    if (initialized && !isAuthenticated) {
-      alert("Debes iniciar sesión para cargar un producto.");
-      loginWithRedirect();
+    console.log("[CARGA] auth state - isLoading:", isLoading, "isAuthenticated:", isAuthenticated);
+  }, [isLoading, isAuthenticated]);
+
+  // Protegemos: si ya inicializó y no está autenticado, redirigimos al login
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      // lanzar login sólo cuando SDK ya terminó de inicializar
+      loginWithRedirect().catch(err => console.error("[CARGA] loginWithRedirect error:", err));
     }
-    // Si querés verificar rol 'vendedor' aquí, lo hacemos abajo en handleSubmit.
-  }, [isAuthenticated, initialized, loginWithRedirect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isAuthenticated]);
 
   useEffect(() => {
     // limpiar objectURLs al desmontar / cuando previews cambien
@@ -63,12 +70,15 @@ const CargaProducto = () => {
 
   const usuarioTieneRol = (rolesArray, rolBuscado) => {
     if (!Array.isArray(rolesArray)) return false;
-    return rolesArray.includes(rolBuscado);
+    return rolesArray.map(r => String(r).toLowerCase()).includes(String(rolBuscado).toLowerCase());
   };
 
   const obtenerRolesDesdeToken = async () => {
     try {
-      const token = await getToken();
+      // Preferimos usar getAccessTokenSilently del SDK para forzar ignoreCache
+      const token = await (getAccessTokenSilently
+        ? getAccessTokenSilently({ authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE }, ignoreCache: true })
+        : getToken({ ignoreCache: true }));
       if (!token) return [];
       const payload = JSON.parse(atob(token.split(".")[1]));
       const rolesNamespace = process.env.REACT_APP_AUTH0_ROLES_NAMESPACE || "https://tienda.example.com/roles";
@@ -85,21 +95,34 @@ const CargaProducto = () => {
     setLoading(true);
 
     try {
-      // Asegurarse de estar autenticado
-      if (!isAuthenticated) {
-        await loginWithRedirect();
-        return;
-      }
+    if (!isAuthenticated) {
+      await loginWithRedirect();
+      return;
+    }
 
-      // Opcional: validar rol vendedor (si querés que solo vendedores puedan subir)
-      const roles = await obtenerRolesDesdeToken();
-      // Ajustá el nombre del rol según lo que tengas en Auth0
-      const permitido = usuarioTieneRol(roles, "vendedor") || usuarioTieneRol(roles, "administrador");
-      if (!permitido) {
-        alert("No tenés permisos para cargar productos. Contactá al administrador.");
-        setLoading(false);
-        return;
-      }
+    // Obtener token fresco y forzado antes de enviar (ignoreCache)
+    let token = null;
+    try {
+      token = await getAccessTokenSilently({
+        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+        ignoreCache: true,
+      });
+      console.log("[CARGA] token obtenido (len):", token ? token.length : 0);
+    } catch (tkErr) {
+      console.error("[CARGA] error al obtener token:", tkErr);
+      // Si falló obtener token, forzamos login
+      await loginWithRedirect();
+      return;
+    }
+
+    // Validar rol a partir del token (si quieres)
+    const roles = await obtenerRolesDesdeTokenConToken(token); // ver helper abajo
+    const permitido = usuarioTieneRol(roles, "vendedor") || usuarioTieneRol(roles, "administrador");
+    if (!permitido) {
+      alert("No tenés permisos para cargar productos. Contactá al administrador.");
+      setLoading(false);
+      return;
+    }
 
       const fd = new FormData();
       fd.append("titulo", formData.titulo);
@@ -113,8 +136,7 @@ const CargaProducto = () => {
         fd.append("fotos", file);
       });
 
-      // crearProducto usa la instancia api que añade Authorization automáticamente
-      const nuevo = await crearProducto(fd);
+      const nuevo = await crearProducto(fd, token);
 
       alert("Producto cargado con éxito");
 
@@ -131,24 +153,39 @@ const CargaProducto = () => {
       previews.forEach((url) => URL.revokeObjectURL(url));
       setPreviews([]);
 
-      // redirigir
       setTimeout(() => navigate("/"), 500);
     } catch (error) {
-      console.error("Error al crear producto:", error?.response?.data || error.message || error);
-      if (error?.response?.status === 401) {
-        alert("Sesión expirada o no autorizada. Volvé a iniciar sesión.");
-        await loginWithRedirect();
-        return;
-      }
-      alert("Error al cargar el producto, revisá la consola");
-    } finally {
-      setLoading(false);
+    console.error("Error al crear producto:", error?.response?.data || error.message || error);
+    if (error?.response?.status === 401) {
+      alert("Sesión expirada o no autorizada. Volvé a iniciar sesión.");
+      await loginWithRedirect();
+      return;
     }
-  };
-
-  if (!initialized) {
-    return <div>Cargando...</div>;
+    alert("Error al cargar el producto, revisá la consola");
+  } finally {
+    setLoading(false);
   }
+};
+
+// helper para decodificar roles desde token que ya tenemos
+const obtenerRolesDesdeTokenConToken = async (token) => {
+  if (!token) return [];
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const rolesNamespace = process.env.REACT_APP_AUTH0_ROLES_NAMESPACE || "https://tienda.example.com/roles";
+    const roles = payload[rolesNamespace] || payload.roles || (payload.realm_access && payload.realm_access.roles) || [];
+    return Array.isArray(roles) ? roles : [];
+  } catch (e) {
+    console.warn("obtenerRolesDesdeTokenConToken error", e);
+    return [];
+  }
+};
+
+  // Mientras Auth0 inicializa, mostrar carga del SDK
+  if (isLoading) return <div>Cargando...</div>;
+
+  // Si no autenticado (loginWithRedirect fue disparado), no renderizamos el form
+  if (!isAuthenticated) return null;
 
   return (
     <div className="form-page">
