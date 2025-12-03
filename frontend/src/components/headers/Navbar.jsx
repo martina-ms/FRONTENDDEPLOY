@@ -1,14 +1,20 @@
-import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import "./Navbar.css";
 import Header from "./Header";
-import { useKeycloak } from '@react-keycloak/web';
 import { FaShoppingCart, FaBars, FaTimes } from "react-icons/fa";
 import { useCartContext } from "../../context/cartContext";
 import NotificacionBell from "../notificaciones/NotificacionBell";
+import useAuth from "../../hooks/useAuth";
+import { getToken } from "../../auth/authService.js";
 
-
-
+/**
+ * Navbar actualizado para Auth0.
+ * Muestra botones de login/logout y maneja roles (leyendo el access token).
+ *
+ * Importante: para determinar roles en frontend decodificamos el access token.
+ * La fuente de verdad debe ser el backend, pero para UI temporal esto sirve.
+ */
 const Navbar = () => {
   const { carrito, mostrarCarrito } = useCartContext();
   const cantidadTotal = carrito.reduce((sum, p) => sum + p.cantidad, 0);
@@ -16,31 +22,63 @@ const Navbar = () => {
   const [submenuOpen, setSubmenuOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
 
-  // Función que redirige a /productos con query param "nombre"
+  const { loginWithRedirect, logout, isAuthenticated, user, isLoading, getAccessTokenSilently } = useAuth();
+
+  const [roles, setRoles] = useState([]);
+  const hasRole = (r) => roles.map(s => String(s).toLowerCase()).includes(String(r).toLowerCase());
+  const canViewPedidos =
+    isAuthenticated &&
+    (hasRole("comprador") || hasRole("vendedor") || hasRole("administrador"));
+
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!isAuthenticated) {
+        setRoles([]);
+        return;
+      }
+      try {
+        // FORZAR token fresco (ignorar cache) para obtener claims actualizados
+        const token = await getToken({ ignoreCache: true }); // si tu getToken acepta options
+        if (!token) {
+          setRoles([]);
+          return;
+        }
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const rolesNamespace = process.env.REACT_APP_AUTH0_ROLES_NAMESPACE || "https://tienda.example.com/roles";
+        const tokenRoles = payload[rolesNamespace] || payload.roles || (payload.realm_access && payload.realm_access.roles) || [];
+        if (mounted) setRoles(Array.isArray(tokenRoles) ? tokenRoles : []);
+      } catch (e) {
+        console.warn("Navbar: no se pudieron leer roles del token", e);
+        setRoles([]);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [isAuthenticated]);
+
   const handleSearch = () => {
     if (searchText.trim() !== "") {
       navigate(`/productos?nombre=${encodeURIComponent(searchText.trim())}`);
-      setSearchText(""); // opcional: limpiar input
+      setSearchText("");
     }
   };
 
-  // Permitir buscar al presionar Enter
   const handleKeyPress = (e) => {
     if (e.key === "Enter") handleSearch();
   };
 
-  const { keycloak, initialized } = useKeycloak();
+  
+
   return (
     <>
       {location.pathname === "/" && <Header />}
 
       <nav className="navbar">
-        {/* Logo */}
-        <div className="nav-logo"><a href="/">Tienda Sol</a></div>
+        <div className="nav-logo"><Link to="/">Tienda Sol</Link></div>
 
-        {/* Buscador */}
         <div className="nav-search-wrapper">
           <input
             type="text"
@@ -50,21 +88,16 @@ const Navbar = () => {
             onChange={(e) => setSearchText(e.target.value)}
             onKeyPress={handleKeyPress}
           />
-          <button className="nav-search-btn" onClick={handleSearch}>
-            Buscar
-          </button>
+          <button className="nav-search-btn" onClick={handleSearch}>Buscar</button>
         </div>
 
-        {/* Botón menú hamburguesa */}
         <div className="nav-toggle" onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? <FaTimes /> : <FaBars />}
         </div>
 
-        {/* Enlaces de navegación */}
         <div className={`nav-links ${menuOpen ? "active" : ""}`}>
-          <a href="/">Inicio</a>
+          <Link to="/">Inicio</Link>
 
-          {/* Productos con submenú */}
           <div
             className="nav-item-with-submenu"
             onMouseEnter={() => setSubmenuOpen(true)}
@@ -72,17 +105,17 @@ const Navbar = () => {
           >
             <button className="nav-main-link">Productos ▾</button>
             <div className={`submenu ${submenuOpen ? "show" : ""}`}>
-              <a href="/productos">Ver productos</a>
-              <a href="/carga-producto">Subir producto</a>
+              <Link to="/productos">Ver productos</Link>
+              {/* Mostrar "Subir producto" solo si es vendedor o admin en UI */}
+              {hasRole('vendedor') && <Link to="/carga-producto">Subir producto</Link>}
+              {/* Si querés visible siempre, quita la comprobación */}
             </div>
           </div>
 
-
-          {keycloak.authenticated && keycloak.hasRealmRole('default-roles-tp-tienda-sol') && (
-            <a href="/pedidos">Mis Pedidos</a>
+          {isAuthenticated && canViewPedidos && (
+            <Link to="/pedidos">Mis Pedidos</Link>
           )}
 
-          {/* Íconos */}
           <div className="nav-icons">
             <button
               onClick={mostrarCarrito}
@@ -91,8 +124,7 @@ const Navbar = () => {
             >
               <FaShoppingCart className="nav-icon" />
               {cantidadTotal > 0 && (
-                <span
-                  style={{
+                <span style={{
                     position: "absolute",
                     top: -8,
                     right: -8,
@@ -101,8 +133,7 @@ const Navbar = () => {
                     borderRadius: "50%",
                     padding: "2px 6px",
                     fontSize: "12px"
-                  }}
-                >
+                  }}>
                   {cantidadTotal}
                 </span>
               )}
@@ -111,29 +142,26 @@ const Navbar = () => {
             <NotificacionBell />
           </div>
 
-
-          {/* Si el usuario NO está autenticado */}
-          {!keycloak.authenticated && (
+          {!isAuthenticated && (
             <button
               type="button"
               className="auth-button login"
-              onClick={() => keycloak.login()}
+              onClick={() => loginWithRedirect()}
             >
               Iniciar Sesión
             </button>
           )}
 
-          {/* Si el usuario SÍ está autenticado */}
-          {keycloak.authenticated && (
+          {isAuthenticated && (
             <div className="user-info-nav">
-              {keycloak.hasRealmRole('administrador') && (
+              {hasRole('administrador') && (
                 <button className="nav-button">Admin</button>
               )}
 
               <button
                 type="button"
                 className="auth-button logout"
-                onClick={() => keycloak.logout()}
+                onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
               >
                 Cerrar Sesión
               </button>

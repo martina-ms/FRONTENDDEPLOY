@@ -1,11 +1,12 @@
 import { useCartContext } from "../context/cartContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "@mui/material/Button";
 import "./Checkout.css";
-import { useEffect } from "react";
-import keycloak from "../keycloak";
 import CircularProgress from "@mui/material/CircularProgress";
+import useAuth from "../hooks/useAuth";
+import { getToken } from "../auth/authService";
+import api from "../api/api";
 
 function convertirMoneda(precio, monedaOrigen, monedaDestino) {
   const cotizacionUSD = 1400;
@@ -47,10 +48,12 @@ export default function Checkout() {
   });
   const [loading, setLoading] = useState(false);
 
-const total = carrito.reduce((sum, p) => {
-  const precioEnPesos = convertirMoneda(p.precio, p.moneda, "ARS");
-  return sum + precioEnPesos * p.cantidad;
-}, 0);
+  const total = carrito.reduce((sum, p) => {
+    const precioEnPesos = convertirMoneda(p.precio, p.moneda, "ARS");
+    return sum + precioEnPesos * p.cantidad;
+  }, 0);
+
+  const { isAuthenticated, loginWithRedirect, user } = useAuth();
 
   useEffect(() => {
     if (!carritoVacio || pedidoConfirmado) return;
@@ -67,43 +70,56 @@ const total = carrito.reduce((sum, p) => {
     return () => clearInterval(interval);
   }, [carritoVacio, navigate, pedidoConfirmado]);
 
-  const handleConfirmar = async (e) => {
-  e.preventDefault();
-  if (!keycloak.authenticated) {
-    alert("Error: El usuario no está autenticado.");
-    return;
-  }
-
-  setLoading(true); // comienza carga
-
-  const compradorId = keycloak.subject;
-
-  const pedido = {
-    comprador: compradorId,
-    moneda: "Peso_arg",
-    direccionEntrega: {
-      ...direccion,
-      altura: Number(direccion.altura)
-    },
-    items: carrito.map(p => ({
-      producto: p._id,
-      cantidad: p.cantidad
-    }))
+  const obtenerCompradorId = async () => {
+    // Preferimos usar user.sub si está disponible, si no decodeamos el access token
+    if (user && user.sub) return user.sub;
+    try {
+      const token = await getToken();
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.sub || null;
+    } catch (e) {
+      console.warn("No se pudo obtener compradorId desde token", e);
+      return null;
+    }
   };
 
-  try {
-      const resp = await fetch("http://localhost:3000/pedidos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${keycloak.token}`
-        },
-        body: JSON.stringify(pedido)
-      });
+  const handleConfirmar = async (e) => {
+    e.preventDefault();
 
-      if (!resp.ok) {
-        const err = await resp.json();
-        console.log(err);
+    if (!isAuthenticated) {
+      // Redirigir al login si no está autenticado
+      await loginWithRedirect();
+      return;
+    }
+
+    setLoading(true);
+
+    const compradorId = await obtenerCompradorId();
+    if (!compradorId) {
+      alert("Error: no se pudo identificar al usuario. Iniciá sesión nuevamente.");
+      setLoading(false);
+      return;
+    }
+
+    const pedido = {
+      comprador: compradorId,
+      moneda: "Peso_arg",
+      direccionEntrega: {
+        ...direccion,
+        altura: Number(direccion.altura)
+      },
+      items: carrito.map(p => ({
+        producto: p._id,
+        cantidad: p.cantidad
+      }))
+    };
+
+    try {
+      const resp = await api.post("/pedidos", pedido);
+
+      if (resp.status && resp.status >= 400) {
+        console.log(resp);
         alert("Error procesando pedido");
         return;
       }
@@ -111,13 +127,17 @@ const total = carrito.reduce((sum, p) => {
       setPedidoConfirmado(true);
       limpiarCarrito(true);
       navigate("/gracias");
-      
-
     } catch (err) {
       console.error(err);
+      if (err.response && err.response.status === 401) {
+        // Token inválido/expirado: forzar relogin
+        alert("Sesión expirada o no autorizada. Volvé a iniciar sesión.");
+        await loginWithRedirect();
+        return;
+      }
       alert("Error de conexión");
     } finally {
-      setLoading(false); // ✅ fin de carga
+      setLoading(false);
     }
   };
 
@@ -220,19 +240,18 @@ const total = carrito.reduce((sum, p) => {
           <>
             <h4 className="subtitulo">Resumen del pedido</h4>
             {carrito.map((p) => {
-  const precioEnPesos = convertirMoneda(p.precio, p.moneda, "ARS");
-  return (
-    <div key={p._id} className="resumen-item">
-      <span>{p.titulo} × {p.cantidad}</span>
-      <strong>${(precioEnPesos * p.cantidad).toFixed(2)} ARS</strong>
-    </div>
-  );
-})}
+              const precioEnPesos = convertirMoneda(p.precio, p.moneda, "ARS");
+              return (
+                <div key={p._id} className="resumen-item">
+                  <span>{p.titulo} × {p.cantidad}</span>
+                  <strong>${(precioEnPesos * p.cantidad).toFixed(2)} ARS</strong>
+                </div>
+              );
+            })}
 
             <div className="resumen-total">
               <span>Total:</span>
               <strong>${total.toFixed(2)} ARS</strong>
-
             </div>
           </>
         )}
@@ -246,12 +265,13 @@ const total = carrito.reduce((sum, p) => {
         >
           {loading ? <CircularProgress size={24} color="inherit" /> : "Confirmar Pedido"}
         </Button>
-  {carritoVacio && (
+
+        {carritoVacio && (
           <p className="volver-texto">
             Volviendo al inicio en {countdown}...
           </p>
         )}
-        
+
       </form>
     </div>
   );

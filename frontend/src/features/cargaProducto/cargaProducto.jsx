@@ -1,15 +1,16 @@
-import { React, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./cargaProducto.css";
-import axios from "axios";
-import { crearProducto } from "../../api/api";
+import { crearProducto } from "../../service/productoService";
 import { useNavigate } from "react-router-dom";
-import { useKeycloak } from "@react-keycloak/web";
+import { useAuth0 } from "@auth0/auth0-react";
+import { getToken } from "../../auth/authService"; // si getToken usa getAccessTokenSilently, ok
 
 const CargaProducto = () => {
-const navigate = useNavigate();
-const { keycloak, initialized } = useKeycloak();
+  const navigate = useNavigate();
+  // Usamos useAuth0 directamente para evitar inconsistencias con useAuth personalizado
+  const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
 
-const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({
     titulo: "",
     descripcion: "",
     categoria: "",
@@ -22,19 +23,21 @@ const [formData, setFormData] = useState({
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
 
-useEffect(() => {
-    if (initialized && !keycloak.authenticated) {
-      alert("Debes iniciar sesión para cargar un producto.");
-      keycloak.login();
-    }
-    // Opcional: si quieres verificar que sea VENDEDOR
-    // if (initialized && !keycloak.hasRealmRole('vendedor')) {
-    //   alert("No tienes permisos para cargar productos.");
-    //   navigate("/");
-    // }
-  }, [keycloak, initialized, navigate]);
+  // DEBUG: ver estado de auth en consola
+  useEffect(() => {
+    console.log("[CARGA] auth state - isLoading:", isLoading, "isAuthenticated:", isAuthenticated);
+  }, [isLoading, isAuthenticated]);
 
-useEffect(() => {
+  // Protegemos: si ya inicializó y no está autenticado, redirigimos al login
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      // lanzar login sólo cuando SDK ya terminó de inicializar
+      loginWithRedirect().catch(err => console.error("[CARGA] loginWithRedirect error:", err));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isAuthenticated]);
+
+  useEffect(() => {
     // limpiar objectURLs al desmontar / cuando previews cambien
     return () => {
       previews.forEach((url) => URL.revokeObjectURL(url));
@@ -56,10 +59,8 @@ useEffect(() => {
   };
 
   const handleFotosChange = (e) => {
-    const files = Array.from(e.target.files|| []);
-    //const nombres = files.map((f) => f.name);
+    const files = Array.from(e.target.files || []);
     setFormData((prev) => ({ ...prev, fotos: files }));
-
 
     // limpiar previos si existen
     previews.forEach((url) => URL.revokeObjectURL(url));
@@ -67,36 +68,76 @@ useEffect(() => {
     setPreviews(objectUrls);
   };
 
+  const usuarioTieneRol = (rolesArray, rolBuscado) => {
+    if (!Array.isArray(rolesArray)) return false;
+    return rolesArray.map(r => String(r).toLowerCase()).includes(String(rolBuscado).toLowerCase());
+  };
+
+  const obtenerRolesDesdeToken = async () => {
+    try {
+      // Preferimos usar getAccessTokenSilently del SDK para forzar ignoreCache
+      const token = await (getAccessTokenSilently
+        ? getAccessTokenSilently({ authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE }, ignoreCache: true })
+        : getToken({ ignoreCache: true }));
+      if (!token) return [];
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const rolesNamespace = process.env.REACT_APP_AUTH0_ROLES_NAMESPACE || "https://tienda.example.com/roles";
+      const roles = payload[rolesNamespace] || payload.roles || (payload.realm_access && payload.realm_access.roles) || [];
+      return Array.isArray(roles) ? roles : [];
+    } catch (e) {
+      console.warn("No se pudieron obtener roles desde token", e);
+      return [];
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
+    if (!isAuthenticated) {
+      await loginWithRedirect();
+      return;
+    }
+
+    // Obtener token fresco y forzado antes de enviar (ignoreCache)
+    let token = null;
+    try {
+      token = await getAccessTokenSilently({
+        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+        ignoreCache: true,
+      });
+      console.log("[CARGA] token obtenido (len):", token ? token.length : 0);
+    } catch (tkErr) {
+      console.error("[CARGA] error al obtener token:", tkErr);
+      // Si falló obtener token, forzamos login
+      await loginWithRedirect();
+      return;
+    }
+
+    // Validar rol a partir del token (si quieres)
+    const roles = await obtenerRolesDesdeTokenConToken(token); // ver helper abajo
+    const permitido = usuarioTieneRol(roles, "vendedor") || usuarioTieneRol(roles, "administrador");
+    if (!permitido) {
+      alert("No tenés permisos para cargar productos. Contactá al administrador.");
+      setLoading(false);
+      return;
+    }
+
       const fd = new FormData();
       fd.append("titulo", formData.titulo);
       fd.append("descripcion", formData.descripcion);
-      // enviamos categoria como array (backend debe manejarlo)
       fd.append("categorias[]", formData.categoria);
       fd.append("precio", String(formData.precio));
       fd.append("moneda", formData.moneda);
       fd.append("stock", String(formData.stock));
 
-      // adjuntar archivos con la misma key 'fotos' (backend con multer array('fotos') lo recibirá)
       formData.fotos.forEach((file) => {
         fd.append("fotos", file);
       });
 
-    
-      const headers = {};
-      if (keycloak?.token) {
-        headers.Authorization = `Bearer ${keycloak.token}`;
-      }
+      const nuevo = await crearProducto(fd, token);
 
-      crearProducto(fd);
-      /* const url = `${API_BASE}/api/productos`; 
-      const resp = await axios.post(url, fd, { headers }); */
-
-      // sreemplazar la llamada axios por crearProducto(fd)
-      //console.log("Producto creado:", resp.data);
       alert("Producto cargado con éxito");
 
       // limpiar form y previews
@@ -112,42 +153,45 @@ useEffect(() => {
       previews.forEach((url) => URL.revokeObjectURL(url));
       setPreviews([]);
 
-      // redirigir
       setTimeout(() => navigate("/"), 500);
-
-      /* 
-      // Llamamos al backend
-      const nuevoProducto = await crearProducto({
-       
-        titulo: formData.titulo,
-        descripcion: formData.descripcion,
-        categorias: [formData.categoria], // array!
-        precio: Number(formData.precio),
-        moneda: formData.moneda,
-        stock: Number(formData.stock),
-        fotos: formData.fotos,
-      });
-
-      alert("Producto cargado con éxito");
-      console.log("Producto guardado:", nuevoProducto);
-
-      setTimeout(() => navigate("/")); */
     } catch (error) {
-      alert("Error al cargar el producto, revisá la consola");
-      console.error("Error al crear producto:", error.response?.data || error.message);
-    } finally {
-      setLoading(false);
+    console.error("Error al crear producto:", error?.response?.data || error.message || error);
+    if (error?.response?.status === 401) {
+      alert("Sesión expirada o no autorizada. Volvé a iniciar sesión.");
+      await loginWithRedirect();
+      return;
     }
-  };
-if (!initialized) {
-    return <div>Cargando...</div>;
+    alert("Error al cargar el producto, revisá la consola");
+  } finally {
+    setLoading(false);
   }
+};
+
+// helper para decodificar roles desde token que ya tenemos
+const obtenerRolesDesdeTokenConToken = async (token) => {
+  if (!token) return [];
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const rolesNamespace = process.env.REACT_APP_AUTH0_ROLES_NAMESPACE || "https://tienda.example.com/roles";
+    const roles = payload[rolesNamespace] || payload.roles || (payload.realm_access && payload.realm_access.roles) || [];
+    return Array.isArray(roles) ? roles : [];
+  } catch (e) {
+    console.warn("obtenerRolesDesdeTokenConToken error", e);
+    return [];
+  }
+};
+
+  // Mientras Auth0 inicializa, mostrar carga del SDK
+  if (isLoading) return <div>Cargando...</div>;
+
+  // Si no autenticado (loginWithRedirect fue disparado), no renderizamos el form
+  if (!isAuthenticated) return null;
+
   return (
     <div className="form-page">
       <form className="form-producto" onSubmit={handleSubmit} encType="multipart/form-data">
         <h2>Cargar nuevo producto</h2>
 
-  
         <label>
           Título
           <input
@@ -157,6 +201,7 @@ if (!initialized) {
             value={formData.titulo}
             onChange={handleChange}
             required
+            disabled={loading}
           />
         </label>
 
@@ -167,6 +212,7 @@ if (!initialized) {
             placeholder="Descripción del producto"
             value={formData.descripcion}
             onChange={handleChange}
+            disabled={loading}
           />
         </label>
 
@@ -177,6 +223,7 @@ if (!initialized) {
             value={formData.categoria}
             onChange={handleChange}
             required
+            disabled={loading}
           >
             <option value="">Seleccione una categoría</option>
             {categoriasDisponibles.map((cat) => (
@@ -197,6 +244,7 @@ if (!initialized) {
             value={formData.precio}
             onChange={handleChange}
             required
+            disabled={loading}
           />
         </label>
 
@@ -207,6 +255,7 @@ if (!initialized) {
             value={formData.moneda}
             onChange={handleChange}
             required
+            disabled={loading}
           >
             <option value="">Seleccione una moneda</option>
             {monedasDisponibles.map((m) => (
@@ -231,6 +280,7 @@ if (!initialized) {
             value={formData.stock}
             onChange={handleChange}
             required
+            disabled={loading}
           />
         </label>
 
@@ -242,14 +292,15 @@ if (!initialized) {
             multiple
             accept="image/*"
             onChange={handleFotosChange}
-          /> 
+            disabled={loading}
+          />
           {formData.fotos.length > 0 && (
             <p className="archivo-subido">
               {formData.fotos.length} archivo(s) seleccionado(s)
             </p>
           )}
         </label>
-          {previews.length > 0 && (
+        {previews.length > 0 && (
           <div className="previews" style={{ display: "flex", gap: 8, marginTop: 8 }}>
             {previews.map((src, i) => (
               <img
@@ -262,7 +313,7 @@ if (!initialized) {
           </div>
         )}
         <button type="submit" className="btn-enviar" disabled={loading}>
-        {loading ? "Subiendo..." : "Cargar producto"}
+          {loading ? "Subiendo..." : "Cargar producto"}
         </button>
       </form>
     </div>
