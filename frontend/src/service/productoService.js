@@ -1,7 +1,7 @@
 import api from "../api/api";
 import axios from "axios";
 import { getToken } from "../auth/authService";
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:3000";
+const API_BASE = process.env.REACT_APP_API_URL || "https://tiendasolback.onrender.com";
 
 /**
  * Servicio de productos actualizado para usar la instancia axios central (src/api.js)

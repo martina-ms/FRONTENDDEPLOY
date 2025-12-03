@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "../auth/authService.js";
 
-const API_BASE_URL = 'bright-crisp-0c72d7.netlify.app';
+const API_BASE_URL = 'https://tiendasolback.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

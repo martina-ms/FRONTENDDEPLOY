@@ -9,7 +9,7 @@ const MONEDA_MAPEO = {
   Dolar_usa: "USD",
   Real: "BRL",
 };
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:3000";
+const API_BASE = process.env.REACT_APP_API_URL || "https://tiendasolback.onrender.com";
 
 const getImageUrl = (imgValue) => {
   if (!imgValue) return null;

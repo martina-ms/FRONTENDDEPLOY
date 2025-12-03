@@ -8,7 +8,7 @@ import { useCartContext } from "../../context/cartContext";
 import './cartDrawer.css';
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:3000";
+const API_BASE = process.env.REACT_APP_API_URL || "https://tiendasolback.onrender.com";
 
 const getImageUrl = (imgValue) => {
   if (!imgValue) return null;
