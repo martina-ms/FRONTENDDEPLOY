@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "../auth/authService.js";
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'bright-crisp-0c72d7.netlify.app';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
